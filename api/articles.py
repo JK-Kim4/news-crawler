@@ -57,7 +57,7 @@ def _translate_text(text_value: str) -> str:
 def feed(
     request: Request,
     sort: str = "score",
-    country: str = "all",
+    country: str = "",
     source_id: int | None = None,
     tag: str | None = None,
     unread: bool = False,

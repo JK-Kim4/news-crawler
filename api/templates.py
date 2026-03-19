@@ -1,3 +1,4 @@
+import json as _json
 from datetime import datetime, timezone
 from fastapi.templating import Jinja2Templates
 
@@ -45,3 +46,5 @@ templates.env.globals.update(
     country_label=country_label,
     country_flag=country_flag,
 )
+
+templates.env.filters["from_json"] = lambda s: _json.loads(s or "[]")
