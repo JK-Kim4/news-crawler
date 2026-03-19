@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test AI Blog</title>
+    <link>https://test.com</link>
+    <item>
+      <title>New LLM Benchmark Results</title>
+      <link>https://test.com/articles/llm-benchmark</link>
+      <description>A new transformer model achieves SOTA using RAG techniques.</description>
+      <pubDate>Mon, 01 Jan 2024 12:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Docker Basics</title>
+      <link>https://test.com/articles/docker</link>
+      <description>Introduction to containerization.</description>
+      <pubDate>Mon, 01 Jan 2024 11:00:00 +0000</pubDate>
+    </item>
+  </channel>
+</rss>

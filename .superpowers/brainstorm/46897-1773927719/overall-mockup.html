@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; font-size: 13px; }
+
+  .app { display: flex; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { width: 220px; background: #1e293b; color: #e2e8f0; display: flex; flex-direction: column; padding: 16px 0; flex-shrink: 0; }
+  .sidebar-logo { padding: 0 16px 16px; font-size: 16px; font-weight: 700; color: #fff; border-bottom: 1px solid #334155; margin-bottom: 8px; }
+  .sidebar-logo span { font-size: 11px; font-weight: 400; color: #64748b; display: block; margin-top: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 0; cursor: pointer; color: #94a3b8; font-size: 13px; transition: all 0.15s; }
+  .nav-item:hover { background: #334155; color: #e2e8f0; }
+  .nav-item.active { background: #3b82f6; color: #fff; }
+  .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+  .nav-badge { margin-left: auto; background: #ef4444; color: #fff; border-radius: 10px; padding: 1px 6px; font-size: 10px; }
+  .sidebar-section { padding: 12px 16px 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #475569; margin-top: 8px; }
+  .sidebar-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid #334155; }
+  .crawl-btn { width: 100%; padding: 8px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .crawl-btn:hover { background: #2563eb; }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Header */
+  .header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 20px; display: flex; align-items: center; gap: 12px; height: 52px; flex-shrink: 0; }
+  .header-title { font-size: 16px; font-weight: 700; color: #1e293b; }
+  .country-tabs { display: flex; gap: 4px; margin-left: 16px; }
+  .tab { padding: 4px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
+  .tab.active { background: #1e293b; color: #fff; }
+  .tab:not(.active) { color: #64748b; border-color: #e2e8f0; }
+  .search-bar { margin-left: auto; display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 240px; }
+  .search-bar input { border: none; background: transparent; font-size: 12px; outline: none; width: 100%; color: #1e293b; }
+  .sort-select { font-size: 12px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; color: #64748b; background: #fff; }
+
+  /* Feed */
+  .feed { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Article card */
+  .article-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; transition: box-shadow 0.15s; position: relative; }
+  .article-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+  .article-card.read { opacity: 0.55; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+  .card-title { font-size: 13px; font-weight: 600; color: #1e293b; line-height: 1.4; flex: 1; }
+  .card-title a { color: inherit; text-decoration: none; }
+  .card-title a:hover { color: #3b82f6; }
+  .score-pill { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; color: #fff; flex-shrink: 0; }
+  .score-high { background: #2563eb; }
+  .score-mid { background: #059669; }
+  .score-low { background: #6366f1; }
+  .card-meta { font-size: 11px; color: #64748b; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .source-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .tag { background: #eff6ff; color: #3b82f6; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+  .tag.custom { background: #fef9c3; color: #854d0e; }
+  .card-actions { display: flex; align-items: center; gap: 6px; }
+  .action-btn { padding: 3px 8px; border-radius: 5px; font-size: 11px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; color: #64748b; }
+  .action-btn:hover { background: #f8fafc; }
+  .action-btn.bookmark { color: #f59e0b; border-color: #fde68a; background: #fffbeb; }
+  .memo-preview { font-size: 11px; color: #64748b; background: #fef9c3; border-left: 2px solid #fbbf24; padding: 4px 8px; border-radius: 0 4px 4px 0; margin-top: 6px; }
+
+  .country-flag { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #f1f5f9; color: #475569; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      AI Archive
+      <span>AI 기술 아카이브</span>
+    </div>
+
+    <div class="sidebar-section">메뉴</div>
+    <div class="nav-item active"><span class="nav-icon">📰</span> 피드 <span class="nav-badge">12</span></div>
+    <div class="nav-item"><span class="nav-icon">🔖</span> 북마크</div>
+    <div class="nav-item"><span class="nav-icon">🔍</span> 검색</div>
+
+    <div class="sidebar-section">관리</div>
+    <div class="nav-item"><span class="nav-icon">📡</span> 소스 관리</div>
+
+    <div class="sidebar-footer">
+      <div style="font-size:10px; color:#475569; margin-bottom:6px;">마지막 크롤링: 2시간 전</div>
+      <button class="crawl-btn">⟳ 지금 크롤링</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-title">피드</div>
+      <div class="country-tabs">
+        <div class="tab active">전체</div>
+        <div class="tab">🇰🇷 한국</div>
+        <div class="tab">🌏 해외</div>
+      </div>
+      <div class="search-bar">
+        <span style="color:#94a3b8;">🔍</span>
+        <input placeholder="제목, 내용 검색...">
+      </div>
+      <select class="sort-select">
+        <option>스코어순</option>
+        <option>최신순</option>
+      </select>
+    </div>
+
+    <!-- Feed -->
+    <div class="feed">
+      <!-- Card 1 - high score, unread -->
+      <div class="article-card">
+        <div class="card-top">
+          <div class="card-title">
+            <a href="#">LLM Fine-tuning 최신 트렌드 분석: LoRA, QLoRA, 그리고 PEFT의 실전 가이드</a>
+          </div>
+          <div class="score-pill score-high">92점</div>
+        </div>
+        <div class="card-meta">
+          <span class="source-dot" style="background:#3b82f6;"></span>
+          HuggingFace Blog
+          <span class="country-flag">🌏 해외</span>
+          · 2시간 전
+        </div>
+        <div class="card-tags">
+          <span class="tag">llm</span>
+          <span class="tag">fine-tuning</span>
+          <span class="tag">LoRA</span>
+          <span class="tag custom">📌 꼭 읽기</span>
+        </div>
+        <div class="card-actions">
+          <button class="action-btn bookmark">🔖 북마크됨</button>
+          <button class="action-btn">📝 메모 추가</button>
+          <button class="action-btn">✓ 읽음</button>
+          <button class="action-btn">원문 →</button>
+        </div>
+      </div>
+
+      <!-- Card 2 - with memo -->
+      <div class="article-card">
+        <div class="card-top">
+          <div class="card-title">
+            <a href="#">카카오 ML 플랫폼 카나리아: 대규모 AI 서빙 인프라 구축기</a>
+          </div>
+          <div class="score-pill score-mid">78점</div>
+        </div>
+        <div class="card-meta">
+          <span class="source-dot" style="background:#059669;"></span>
+          Kakao Tech Blog
+          <span class="country-flag">🇰🇷 한국</span>
+          · 5시간 전
+        </div>
+        <div class="card-tags">
+          <span class="tag">inference</span>
+          <span class="tag">mlops</span>
+          <span class="tag custom">🏢 사내 참고</span>
+        </div>
+        <div class="memo-preview">📝 "카나리아 배포 전략이 인상적. 우리 팀 인프라에 적용 검토해볼 것"</div>
+        <div class="card-actions" style="margin-top:8px;">
+          <button class="action-btn">🔖 북마크</button>
+          <button class="action-btn">📝 메모 수정</button>
+          <button class="action-btn">✓ 읽음</button>
+          <button class="action-btn">원문 →</button>
+        </div>
+      </div>
+
+      <!-- Card 3 - read -->
+      <div class="article-card read">
+        <div class="card-top">
+          <div class="card-title">
+            <a href="#">RAG 시스템 설계: 하이브리드 검색과 리랭킹 전략</a>
+          </div>
+          <div class="score-pill score-low">85점</div>
+        </div>
+        <div class="card-meta">
+          <span class="source-dot" style="background:#6366f1;"></span>
+          Naver D2
+          <span class="country-flag">🇰🇷 한국</span>
+          · 어제 · ✓ 읽음
+        </div>
+        <div class="card-tags">
+          <span class="tag">rag</span>
+          <span class="tag">vector-db</span>
+        </div>
+        <div class="card-actions">
+          <button class="action-btn">🔖 북마크</button>
+          <button class="action-btn">📝 메모</button>
+          <button class="action-btn" style="color:#ef4444; border-color:#fecaca;">↩ 읽음 취소</button>
+          <button class="action-btn">원문 →</button>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="article-card">
+        <div class="card-top">
+          <div class="card-title">
+            <a href="#">Attention Is All You Need 이후 5년: Transformer 아키텍처의 진화</a>
+          </div>
+          <div class="score-pill score-high">95점</div>
+        </div>
+        <div class="card-meta">
+          <span class="source-dot" style="background:#7c3aed;"></span>
+          ArXiv AI
+          <span class="country-flag">🌏 해외</span>
+          · 어제
+        </div>
+        <div class="card-tags">
+          <span class="tag">transformer</span>
+          <span class="tag">attention</span>
+          <span class="tag">paper</span>
+        </div>
+        <div class="card-actions">
+          <button class="action-btn">🔖 북마크</button>
+          <button class="action-btn">📝 메모</button>
+          <button class="action-btn">✓ 읽음</button>
+          <button class="action-btn">원문 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

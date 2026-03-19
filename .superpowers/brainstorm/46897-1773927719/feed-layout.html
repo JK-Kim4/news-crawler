@@ -1,0 +1,133 @@
+<h2>피드 레이아웃 옵션</h2>
+<p class="subtitle">현재보다 사용성이 좋은 레이아웃을 선택해주세요</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; padding:16px; font-size:12px;">
+      <div style="background:#1e293b; color:#fff; padding:6px 12px; border-radius:4px; margin-bottom:8px; font-size:11px;">전체 | 한국 | 해외</div>
+      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-weight:bold; font-size:11px; margin-bottom:2px;">LLM Fine-tuning 최신 트렌드 분석</div>
+            <div style="color:#64748b; font-size:10px;">HuggingFace · 2시간 전</div>
+          </div>
+          <div style="background:#2563eb; color:#fff; border-radius:12px; padding:2px 8px; font-size:10px; white-space:nowrap;">92점</div>
+        </div>
+        <div style="margin-top:4px; display:flex; gap:4px;">
+          <span style="background:#dbeafe; border-radius:3px; padding:1px 5px; font-size:9px;">llm</span>
+          <span style="background:#dbeafe; border-radius:3px; padding:1px 5px; font-size:9px;">fine-tuning</span>
+        </div>
+      </div>
+      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-weight:bold; font-size:11px; margin-bottom:2px;">카카오 AI 인프라 구축 사례</div>
+            <div style="color:#64748b; font-size:10px;">Kakao Tech · 5시간 전</div>
+          </div>
+          <div style="background:#059669; color:#fff; border-radius:12px; padding:2px 8px; font-size:10px; white-space:nowrap;">78점</div>
+        </div>
+        <div style="margin-top:4px; display:flex; gap:4px;">
+          <span style="background:#d1fae5; border-radius:3px; padding:1px 5px; font-size:9px;">inference</span>
+        </div>
+      </div>
+      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; opacity:0.5;">
+        <div style="font-weight:bold; font-size:11px; margin-bottom:2px;">RAG 시스템 설계 가이드</div>
+        <div style="color:#64748b; font-size:10px;">Naver D2 · 어제</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 스마트 리스트뷰</h3>
+      <p>탭 + 스코어 컬러 배지 + 태그. 현재 구조를 유지하면서 시각적 계층과 밀도를 개선. 읽은 항목은 투명도로 처리.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; padding:16px; font-size:12px;">
+      <div style="background:#1e293b; color:#fff; padding:6px 12px; border-radius:4px; margin-bottom:8px; font-size:11px;">전체 | 한국 | 해외 &nbsp;&nbsp;&nbsp; 🔍 검색</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px;">
+          <div style="background:#dbeafe; height:40px; border-radius:4px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; font-size:9px; color:#1e40af;">HuggingFace</div>
+          <div style="font-weight:bold; font-size:10px; line-height:1.3; margin-bottom:4px;">LLM Fine-tuning 최신 트렌드 분석</div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:#64748b; font-size:9px;">2시간 전</span>
+            <span style="background:#2563eb; color:#fff; border-radius:8px; padding:1px 5px; font-size:9px;">92</span>
+          </div>
+        </div>
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px;">
+          <div style="background:#d1fae5; height:40px; border-radius:4px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; font-size:9px; color:#065f46;">Kakao Tech</div>
+          <div style="font-weight:bold; font-size:10px; line-height:1.3; margin-bottom:4px;">카카오 AI 인프라 구축 사례</div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:#64748b; font-size:9px;">5시간 전</span>
+            <span style="background:#059669; color:#fff; border-radius:8px; padding:1px 5px; font-size:9px;">78</span>
+          </div>
+        </div>
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px; opacity:0.5;">
+          <div style="background:#fef9c3; height:40px; border-radius:4px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; font-size:9px; color:#713f12;">ArXiv</div>
+          <div style="font-weight:bold; font-size:10px; line-height:1.3; margin-bottom:4px;">Attention Mechanism 최적화 연구</div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:#64748b; font-size:9px;">어제</span>
+            <span style="background:#6366f1; color:#fff; border-radius:8px; padding:1px 5px; font-size:9px;">95</span>
+          </div>
+        </div>
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px;">
+          <div style="background:#fce7f3; height:40px; border-radius:4px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; font-size:9px; color:#831843;">OpenAI</div>
+          <div style="font-weight:bold; font-size:10px; line-height:1.3; margin-bottom:4px;">GPT-4o 멀티모달 업데이트</div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:#64748b; font-size:9px;">어제</span>
+            <span style="background:#2563eb; color:#fff; border-radius:8px; padding:1px 5px; font-size:9px;">88</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — 카드 그리드뷰</h3>
+      <p>2열 그리드 카드. 소스 색상 구분 + 상단 검색바. 시각적으로 풍부하고 정보 밀도가 높음. 모바일에서도 자연스럽게 1열로 전환.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; padding:16px; font-size:12px; display:flex; gap:8px;">
+      <div style="width:90px; background:#1e293b; border-radius:6px; padding:8px; color:#fff; font-size:10px; flex-shrink:0;">
+        <div style="font-weight:bold; margin-bottom:8px; font-size:11px;">AI News</div>
+        <div style="padding:4px 6px; border-radius:4px; background:#334155; margin-bottom:2px;">📋 전체</div>
+        <div style="padding:4px 6px; border-radius:4px; margin-bottom:2px; color:#94a3b8;">🇰🇷 한국</div>
+        <div style="padding:4px 6px; border-radius:4px; margin-bottom:8px; color:#94a3b8;">🌏 해외</div>
+        <div style="border-top:1px solid #334155; padding-top:6px; color:#94a3b8; font-size:9px;">소스</div>
+        <div style="padding:3px 6px; color:#94a3b8; font-size:9px;">HuggingFace</div>
+        <div style="padding:3px 6px; color:#94a3b8; font-size:9px;">Kakao Tech</div>
+        <div style="padding:3px 6px; color:#94a3b8; font-size:9px;">ArXiv AI</div>
+      </div>
+      <div style="flex:1;">
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px; margin-bottom:5px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+            <span style="font-weight:bold; font-size:10px;">LLM Fine-tuning 최신 트렌드 분석</span>
+            <span style="background:#2563eb; color:#fff; border-radius:8px; padding:1px 6px; font-size:9px;">92</span>
+          </div>
+          <div style="color:#64748b; font-size:9px; margin-bottom:3px;">HuggingFace · 2시간 전</div>
+          <div style="display:flex; gap:3px;">
+            <span style="background:#dbeafe; border-radius:3px; padding:1px 4px; font-size:8px;">llm</span>
+            <span style="background:#dbeafe; border-radius:3px; padding:1px 4px; font-size:8px;">fine-tuning</span>
+          </div>
+        </div>
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px; margin-bottom:5px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+            <span style="font-weight:bold; font-size:10px;">카카오 AI 인프라 구축 사례</span>
+            <span style="background:#059669; color:#fff; border-radius:8px; padding:1px 6px; font-size:9px;">78</span>
+          </div>
+          <div style="color:#64748b; font-size:9px;">Kakao Tech · 5시간 전</div>
+        </div>
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px; opacity:0.5;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+            <span style="font-weight:bold; font-size:10px;">RAG 시스템 설계 가이드</span>
+            <span style="background:#6366f1; color:#fff; border-radius:8px; padding:1px 6px; font-size:9px;">85</span>
+          </div>
+          <div style="color:#64748b; font-size:9px;">Naver D2 · 어제 ✓읽음</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — 사이드바 + 메인피드</h3>
+      <p>좌측 고정 사이드바(국가 탭 + 소스 필터), 우측 메인 피드. 필터를 자주 바꾸는 사용성에 최적. 데스크탑 중심 레이아웃.</p>
+    </div>
+  </div>
+</div>
