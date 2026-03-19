@@ -53,13 +53,13 @@ def test_process_item_score_breakdown(db):
     assert breakdown["source"] == 50
 
 
-def test_process_item_syncs_fts(db):
-    source = _make_source(db)
+def test_process_item_syncs_fts(db_fts):
+    source = _make_source(db_fts)
     item = _make_item(title="RAG Retrieval", content="RAG with transformer agents")
 
-    article = process_item(db, source, item)
+    article = process_item(db_fts, source, item)
 
-    row_ids = db.execute(
+    row_ids = db_fts.execute(
         text('SELECT rowid FROM article_fts WHERE article_fts MATCH \'"RAG"\'')
     ).scalars().all()
 
