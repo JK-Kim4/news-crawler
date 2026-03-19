@@ -29,6 +29,7 @@
 ```
 .
 ├── claude/          # Claude로 구현한 버전
+├── codex/           # Codex로 구현한 버전
 └── gemini/          # Gemini로 구현한 버전 (예정)
 ```
 
@@ -116,6 +117,12 @@ python -m pytest tests/ -v
 ```
 
 42개 테스트, 전체 통과
+
+---
+
+## Codex 구현체 (`codex/`)
+
+Codex 버전도 동일한 요구사항을 기준으로 구현되어 있으며, 실행 방법과 세부 구조는 [`codex/README.md`](/Users/jongwan/workspaces/private/news-crawler-remote-20260320/codex/README.md)에 정리되어 있습니다.
 
 ---
 

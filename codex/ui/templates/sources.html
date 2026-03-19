@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="glass-panel rounded-[2rem] px-5 py-6 sm:px-8">
+  <div class="border-b border-slate-200 pb-6">
+    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">Source Control</p>
+    <h2 class="mt-3 text-3xl font-semibold tracking-tight text-slate-950">소스 관리</h2>
+    <p class="mt-2 text-sm leading-6 text-slate-600">국가 구분, 활성 상태, 실패 재시도를 한 화면에서 조정합니다.</p>
+  </div>
+
+  <div class="mt-6 overflow-x-auto">
+    <table class="min-w-full text-left text-sm">
+      <thead class="text-xs uppercase tracking-[0.24em] text-slate-500">
+        <tr class="border-b border-slate-200">
+          <th class="px-4 py-3">소스</th>
+          <th class="px-4 py-3">국가</th>
+          <th class="px-4 py-3">타입</th>
+          <th class="px-4 py-3">가중치</th>
+          <th class="px-4 py-3">마지막 크롤링</th>
+          <th class="px-4 py-3">상태</th>
+          <th class="px-4 py-3">실패</th>
+          <th class="px-4 py-3">액션</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for source in sources %}
+        {% set failures = failure_map.get(source.id, []) %}
+        <tr class="border-b border-slate-100">
+          <td class="px-4 py-4">
+            <div class="font-semibold text-slate-900">{{ source.name }}</div>
+            <div class="mt-1 text-xs text-slate-500">{{ source.url }}</div>
+          </td>
+          <td class="px-4 py-4">
+            <span class="rounded-full {% if source.country == 'kr' %}bg-emerald-100 text-emerald-700{% else %}bg-sky-100 text-sky-700{% endif %} px-3 py-1 text-xs font-semibold">{{ country_label(source.country) }}</span>
+          </td>
+          <td class="px-4 py-4 text-slate-600">{{ source.type }}</td>
+          <td class="px-4 py-4 text-slate-600">{{ source.weight }}</td>
+          <td class="px-4 py-4 text-slate-600">{{ relative_time(source.last_crawled_at) }}</td>
+          <td class="px-4 py-4">
+            <span class="rounded-full {% if source.is_active %}bg-emerald-100 text-emerald-700{% else %}bg-slate-200 text-slate-600{% endif %} px-3 py-1 text-xs font-semibold">
+              {{ "활성" if source.is_active else "비활성" }}
+            </span>
+          </td>
+          <td class="px-4 py-4">
+            <div class="flex flex-col gap-2">
+              <span class="text-slate-600">{{ failures|length }}건</span>
+              {% if failures %}
+              <button class="inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800" hx-post="/sources/{{ source.id }}/retry" hx-swap="outerHTML">재시도</button>
+              {% endif %}
+            </div>
+          </td>
+          <td class="px-4 py-4">
+            <button class="inline-flex items-center rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white" hx-post="/sources/{{ source.id }}/toggle" hx-swap="outerHTML">
+              {{ "비활성화" if source.is_active else "활성화" }}
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
