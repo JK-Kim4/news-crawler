@@ -6,97 +6,53 @@
   <title>AI Archive</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css">
-  <style>
-    :root {
-      --bg: #f4efe7;
-      --panel: rgba(255, 255, 255, 0.82);
-      --line: rgba(15, 23, 42, 0.1);
-      --ink: #172033;
-      --muted: #5f6b7c;
-      --accent: #0f766e;
-      --accent-soft: #ccfbf1;
-    }
-
-    body {
-      font-family: "SUIT", sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(14, 116, 144, 0.14), transparent 24%),
-        linear-gradient(180deg, #fbf7f1 0%, var(--bg) 100%);
-    }
-
-    .glass-panel {
-      background: var(--panel);
-      backdrop-filter: blur(18px);
-      border: 1px solid var(--line);
-      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-    }
-
-    .nav-chip {
-      transition: transform 160ms ease, background-color 160ms ease;
-    }
-
-    .nav-chip:hover {
-      transform: translateY(-1px);
-    }
-
-    .htmx-indicator {
-      display: none;
-    }
-
-    .htmx-request .htmx-indicator,
-    .htmx-request.htmx-indicator {
-      display: inline-flex;
-    }
-  </style>
 </head>
-<body class="min-h-screen">
-  <div class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
-    <aside class="glass-panel overflow-hidden rounded-[2rem] lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:w-[260px] lg:flex-none">
-      <div class="h-full bg-slate-950 text-slate-50">
-        <div class="border-b border-white/10 px-6 py-8">
-          <p class="text-xs font-semibold uppercase tracking-[0.32em] text-teal-200">Personal Archive</p>
-          <h1 class="mt-3 text-3xl font-semibold tracking-tight">AI Archive</h1>
-          <p class="mt-3 text-sm leading-6 text-slate-300">수집된 AI 기술 글을 분류하고, 메모와 북마크로 정리하는 개인 아카이브.</p>
-        </div>
+<body class="bg-slate-100 text-slate-800 h-screen flex overflow-hidden">
 
-        <nav class="space-y-2 px-4 py-5 text-sm">
-          <a href="/" class="nav-chip flex items-center justify-between rounded-2xl px-4 py-3 {% if request.url.path == '/' %}bg-white text-slate-950{% else %}text-slate-200 hover:bg-white/10{% endif %}">
-            <span>피드</span>
-            <span class="rounded-full bg-slate-100/10 px-2.5 py-1 text-xs">{{ nav_article_count }}</span>
-          </a>
-          <a href="/bookmarks" class="nav-chip flex items-center justify-between rounded-2xl px-4 py-3 {% if request.url.path == '/bookmarks' %}bg-white text-slate-950{% else %}text-slate-200 hover:bg-white/10{% endif %}">
-            <span>북마크</span>
-            <span class="rounded-full bg-slate-100/10 px-2.5 py-1 text-xs">{{ nav_bookmark_count }}</span>
-          </a>
-          <a href="/search" class="nav-chip flex items-center justify-between rounded-2xl px-4 py-3 {% if request.url.path == '/search' %}bg-white text-slate-950{% else %}text-slate-200 hover:bg-white/10{% endif %}">
-            <span>검색</span>
-            <span class="rounded-full bg-slate-100/10 px-2.5 py-1 text-xs">FTS</span>
-          </a>
-          <a href="/sources" class="nav-chip flex items-center justify-between rounded-2xl px-4 py-3 {% if request.url.path == '/sources' %}bg-white text-slate-950{% else %}text-slate-200 hover:bg-white/10{% endif %}">
-            <span>소스 관리</span>
-            <span class="rounded-full bg-slate-100/10 px-2.5 py-1 text-xs">{{ nav_source_count }}</span>
-          </a>
-        </nav>
+  <!-- 사이드바 -->
+  <aside class="w-56 bg-slate-900 text-slate-200 flex flex-col flex-shrink-0">
+    <div class="px-4 py-5 border-b border-slate-700">
+      <div class="font-bold text-white text-lg">AI Archive</div>
+      <div class="text-slate-400 text-xs mt-0.5">AI 기술 아카이브</div>
+    </div>
 
-        <div class="mt-auto space-y-3 px-6 pb-6 text-sm text-slate-300">
-          <div class="rounded-2xl bg-white/5 px-4 py-4">
-            <p class="text-xs uppercase tracking-[0.24em] text-slate-400">Last Crawl</p>
-            <p class="mt-2 text-base font-semibold text-white">{{ relative_time(nav_last_crawled_at) }}</p>
-          </div>
-          <div class="rounded-2xl bg-gradient-to-r from-teal-400/20 to-sky-400/20 px-4 py-4">
-            <p class="text-sm leading-6 text-slate-100">한국과 해외 기술 블로그를 한 화면에서 정리하고, 필요할 때만 번역을 불러옵니다.</p>
-          </div>
-        </div>
-      </div>
-    </aside>
+    <nav class="flex-1 py-2">
+      <div class="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 mt-2">메뉴</div>
+      <a href="/" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-700 {% if active_page == 'feed' %}bg-blue-600 text-white{% else %}text-slate-300{% endif %}">
+        <span>📰</span> 피드
+      </a>
+      <a href="/bookmarks" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-700 {% if active_page == 'bookmarks' %}bg-blue-600 text-white{% else %}text-slate-300{% endif %}">
+        <span>🔖</span> 북마크
+      </a>
+      <a href="/search" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-700 {% if active_page == 'search' %}bg-blue-600 text-white{% else %}text-slate-300{% endif %}">
+        <span>🔍</span> 검색
+      </a>
+      <div class="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 mt-4">관리</div>
+      <a href="/sources" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-700 {% if active_page == 'sources' %}bg-blue-600 text-white{% else %}text-slate-300{% endif %}">
+        <span>📡</span> 소스 관리
+      </a>
+    </nav>
 
-    <main class="flex-1 py-1">
-      {% block content %}{% endblock %}
-    </main>
-  </div>
+    <div class="px-4 py-4 border-t border-slate-700">
+      <div class="text-xs text-slate-500 mb-2" id="crawl-status">크롤링 대기 중</div>
+      <button
+        class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded"
+        hx-post="/api/crawl"
+        hx-target="#crawl-result"
+        hx-indicator="#crawl-spinner"
+        hx-disabled-elt="this"
+        hx-on::after-request="document.getElementById('crawl-status').textContent='크롤링 완료'; setTimeout(()=>window.location.reload(),1000)">
+        ⟳ 지금 크롤링
+      </button>
+      <span id="crawl-spinner" class="htmx-indicator text-xs text-slate-400 block mt-1">크롤링 중...</span>
+      <div id="crawl-result"></div>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    {% block content %}{% endblock %}
+  </main>
+
 </body>
 </html>
