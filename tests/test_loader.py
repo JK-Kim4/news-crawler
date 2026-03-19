@@ -1,6 +1,7 @@
 import json
 import pytest
 from crawler.loader import load_and_sync_sources, SourceConfigError
+from db.models import Source
 
 
 VALID_CONFIG = {
@@ -71,3 +72,21 @@ def test_invalid_country_raises(tmp_path):
     }))
     with pytest.raises(SourceConfigError):
         load_and_sync_sources(None, str(config_file))
+
+
+def test_country_optional_defaults_to_global(tmp_path, db):
+    """country 필드가 없으면 global 기본값으로 처리된다."""
+    config = tmp_path / "sources.json"
+    config.write_text('{"sources": [{"name": "No Country", "url": "https://nocountry.com/feed", "type": "rss", "weight": 5}]}')
+    load_and_sync_sources(db, str(config))
+    source = db.query(Source).filter_by(url="https://nocountry.com/feed").first()
+    assert source.country == "global"
+
+
+def test_country_kr_synced(tmp_path, db):
+    """country 필드가 kr이면 DB에 반영된다."""
+    config = tmp_path / "sources.json"
+    config.write_text('{"sources": [{"name": "KR", "url": "https://kr-test.com/feed", "type": "rss", "weight": 5, "country": "kr"}]}')
+    load_and_sync_sources(db, str(config))
+    source = db.query(Source).filter_by(url="https://kr-test.com/feed").first()
+    assert source.country == "kr"
