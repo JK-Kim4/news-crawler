@@ -203,11 +203,51 @@ def toggle_bookmark(request: Request, article_id: int, db: Session = Depends(get
     note = get_or_create_user_note(db, article)
     note.is_bookmarked = not note.is_bookmarked
     db.commit()
-    db.refresh(article)
-    return templates.TemplateResponse(
-        request,
-        "_archive_panel.html",
-        {"request": request, "article": enrich_article(article)},
+    is_bm = note.is_bookmarked
+    return HTMLResponse(
+        f'<button class="text-xs px-2 py-1 rounded border '
+        f'{"border-yellow-300 bg-yellow-50 text-yellow-700" if is_bm else "border-slate-200 text-slate-500 hover:bg-slate-50"}" '
+        f'hx-post="/articles/{article_id}/bookmark" '
+        f'hx-swap="outerHTML">'
+        f'{"🔖 북마크됨" if is_bm else "☆ 북마크"}'
+        f'</button>'
+    )
+
+
+@router.get("/articles/{article_id}/memo-form", response_class=HTMLResponse)
+def memo_form(article_id: int, db: Session = Depends(get_db)):
+    note = db.query(UserNote).filter_by(article_id=article_id).first()
+    current = (note.memo or "") if note else ""
+    return HTMLResponse(
+        f'<form id="memo-{article_id}" '
+        f'hx-post="/articles/{article_id}/memo" '
+        f'hx-target="#memo-{article_id}" '
+        f'hx-swap="outerHTML">'
+        f'<textarea name="memo" rows="3" '
+        f'class="w-full border border-slate-200 rounded px-2 py-1 text-sm mt-1">{current}</textarea>'
+        f'<div class="flex gap-2 mt-1">'
+        f'<button type="submit" class="text-xs px-2 py-1 bg-blue-600 text-white rounded">저장</button>'
+        f'<button type="button" class="text-xs px-2 py-1 border border-slate-200 rounded text-slate-500" '
+        f'onclick="this.closest(\'form\').outerHTML=\'\'">취소</button>'
+        f'</div>'
+        f'</form>'
+    )
+
+
+@router.get("/articles/{article_id}/tags-form", response_class=HTMLResponse)
+def tags_form(article_id: int, db: Session = Depends(get_db)):
+    note = db.query(UserNote).filter_by(article_id=article_id).first()
+    current = ",".join(json.loads(note.user_tags)) if note and note.user_tags else ""
+    return HTMLResponse(
+        f'<form id="user-tags-{article_id}" '
+        f'hx-post="/articles/{article_id}/tags" '
+        f'hx-target="#user-tags-{article_id}" '
+        f'hx-swap="outerHTML" '
+        f'class="flex items-center gap-1">'
+        f'<input name="user_tags" value="{current}" placeholder="태그1,태그2" '
+        f'class="border border-slate-200 rounded px-2 py-1 text-xs" style="width:180px">'
+        f'<button type="submit" class="text-xs px-2 py-1 bg-blue-600 text-white rounded">저장</button>'
+        f'</form>'
     )
 
 
