@@ -14,6 +14,12 @@ _is_crawling = False
 _lock = threading.Lock()
 
 
+def get_crawl_status() -> bool:
+    """Return whether a crawl is currently running."""
+    with _lock:
+        return _is_crawling
+
+
 class CrawlRunner:
     def __init__(self, db: Session, config_path: str = "config/sources.json"):
         self.db = db
