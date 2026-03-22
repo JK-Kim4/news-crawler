@@ -14,9 +14,11 @@
         <span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-800">{{ tag }}</span>
         {% endfor %}
       </div>
+      {% if request.state.user %}
       <div id="archive-panel-{{ article.id }}" class="mt-4">
         {% include "_archive_panel.html" %}
       </div>
+      {% endif %}
     </div>
 
     <div class="flex flex-col items-start gap-3">
