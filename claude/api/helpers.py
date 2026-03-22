@@ -28,8 +28,13 @@ def parse_user_tags_input(raw):
     return tags
 
 
-def enrich_article(article: Article) -> Article:
-    note = article.user_note
+def enrich_article(article: Article, user_id: int | None = None) -> Article:
+    note = None
+    if user_id is not None:
+        from sqlalchemy.orm import object_session
+        db = object_session(article)
+        if db:
+            note = db.query(UserNote).filter_by(article_id=article.id, user_id=user_id).first()
     article.tags_list = parse_json_array(article.tags)
     article.user_tags_list = parse_json_array(note.user_tags if note else "[]")
     article.memo_text = (note.memo or "").strip() if note and note.memo else ""
@@ -41,23 +46,28 @@ def enrich_article(article: Article) -> Article:
     return article
 
 
-def enrich_articles(articles):
-    return [enrich_article(article) for article in articles]
+def enrich_articles(articles, user_id=None):
+    return [enrich_article(article, user_id) for article in articles]
 
 
-def get_or_create_user_note(db: Session, article: Article) -> UserNote:
-    note = article.user_note
+def get_or_create_user_note(db: Session, article: Article, user_id: int) -> UserNote:
+    note = db.query(UserNote).filter_by(article_id=article.id, user_id=user_id).first()
     if note:
         return note
-    note = UserNote(article_id=article.id)
+    note = UserNote(article_id=article.id, user_id=user_id)
     db.add(note)
     db.commit()
     db.refresh(note)
-    db.refresh(article)
-    return article.user_note
+    return note
 
 
-def build_sidebar_context(db: Session):
+def build_sidebar_context(db: Session, user=None):
+    bookmark_count = 0
+    if user:
+        bookmark_count = db.query(UserNote).filter(
+            UserNote.user_id == user.id,
+            UserNote.is_bookmarked.is_(True),
+        ).count()
     return {
         "nav_article_count": (
             db.query(Article)
@@ -65,7 +75,7 @@ def build_sidebar_context(db: Session):
             .filter(Source.is_active.is_(True))
             .count()
         ),
-        "nav_bookmark_count": db.query(UserNote).filter(UserNote.is_bookmarked.is_(True)).count(),
+        "nav_bookmark_count": bookmark_count,
         "nav_source_count": db.query(Source).count(),
         "nav_last_crawled_at": db.query(func.max(Source.last_crawled_at)).scalar(),
     }

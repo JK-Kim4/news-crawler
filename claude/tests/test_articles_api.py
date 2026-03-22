@@ -1,12 +1,18 @@
+import os
 from datetime import datetime, timezone
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import RedirectResponse
 from api.articles import router as articles_router
 from api.sources import router as sources_router
-from db.models import Article, Base, Source, UserNote
+from auth.dependencies import LoginRequired
+from auth.router import router as auth_router
+from auth.password import hash_password
+from db.models import Article, Base, Source, User, UserNote
 from db.session import get_db
 
 
@@ -39,6 +45,13 @@ def _build_client():
 
     SessionLocal = sessionmaker(engine)
     app = FastAPI()
+
+    @app.exception_handler(LoginRequired)
+    async def login_required_handler(request: Request, exc: LoginRequired):
+        return RedirectResponse(url="/auth/login", status_code=303)
+
+    app.add_middleware(SessionMiddleware, secret_key="test-secret", max_age=604800)
+    app.include_router(auth_router)
     app.include_router(articles_router)
     app.include_router(sources_router)
 
@@ -50,11 +63,36 @@ def _build_client():
             db.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    return TestClient(app), SessionLocal, engine
+    return TestClient(app, follow_redirects=True), SessionLocal, engine
+
+
+def _create_admin_user(SessionLocal):
+    """Create a verified admin user and return (email, password)."""
+    with SessionLocal() as db:
+        user = User(
+            email="admin@test.com",
+            password_hash=hash_password("testpassword"),
+            nickname="admin",
+            role="admin",
+            is_verified=True,
+        )
+        db.add(user)
+        db.commit()
+        user_id = user.id
+    return "admin@test.com", "testpassword", user_id
+
+
+def _login(client, email, password):
+    """Log in the test client via POST /auth/login."""
+    resp = client.post("/auth/login", data={"email": email, "password": password})
+    assert resp.status_code == 200, f"Login failed: {resp.status_code} {resp.text[:200]}"
 
 
 def test_bookmark_toggle_creates_note():
     client, SessionLocal, engine = _build_client()
+    email, password, _ = _create_admin_user(SessionLocal)
+    _login(client, email, password)
+
     with SessionLocal() as db:
         source = Source(name="OpenAI", url="https://openai.com/blog", type="rss", weight=9, country="global")
         db.add(source)

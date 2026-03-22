@@ -14,8 +14,9 @@ from api.helpers import (
     parse_user_tags_input,
 )
 from api.templates import templates
-from crawler.runner import CrawlRunner
-from db.models import Article, Source, UserNote
+from auth.dependencies import require_login, require_admin
+from crawler.runner import CrawlRunner, get_crawl_status
+from db.models import Article, Source, User, UserNote
 from db.session import get_db
 
 router = APIRouter()
@@ -39,7 +40,8 @@ def _apply_country_filter(query, country: str):
 
 
 def _base_context(request: Request, db: Session):
-    return {"request": request, **build_sidebar_context(db)}
+    user = getattr(getattr(request, 'state', None), 'user', None)
+    return {"request": request, **build_sidebar_context(db, user)}
 
 
 def _build_fts_query(raw_query: str) -> str:
@@ -63,6 +65,9 @@ def feed(
     unread: bool = False,
     db: Session = Depends(get_db),
 ):
+    user = getattr(getattr(request, 'state', None), 'user', None)
+    user_id = user.id if user else None
+
     query = _apply_country_filter(_article_query(db), country)
     if source_id:
         query = query.filter(Article.source_id == source_id)
@@ -75,7 +80,7 @@ def feed(
     else:
         query = query.order_by(Article.score.desc(), Article.published_at.desc(), Article.id.desc())
 
-    articles = enrich_articles(query.limit(50).all())
+    articles = enrich_articles(query.limit(50).all(), user_id)
     sources = db.query(Source).filter(Source.is_active.is_(True)).order_by(Source.country, Source.name).all()
 
     return templates.TemplateResponse(
@@ -98,12 +103,13 @@ def feed(
 def bookmarks_page(
     request: Request,
     country: str = "all",
+    user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     memo_first = case((UserNote.memo.is_not(None), 0), else_=1)
     articles = (
         _apply_country_filter(_article_query(db).join(UserNote), country)
-        .filter(UserNote.is_bookmarked.is_(True))
+        .filter(UserNote.is_bookmarked.is_(True), UserNote.user_id == user.id)
         .order_by(memo_first.asc(), Article.published_at.desc(), Article.id.desc())
         .all()
     )
@@ -112,7 +118,7 @@ def bookmarks_page(
         "bookmarks.html",
         {
             **_base_context(request, db),
-            "articles": enrich_articles(articles),
+            "articles": enrich_articles(articles, user.id),
             "selected_country": country,
         },
     )
@@ -125,6 +131,9 @@ def search_page(
     country: str = "all",
     db: Session = Depends(get_db),
 ):
+    user = getattr(getattr(request, 'state', None), 'user', None)
+    user_id = user.id if user else None
+
     article_ids = []
     query_text = _build_fts_query(q.strip())
     if query_text:
@@ -154,7 +163,10 @@ def search_page(
             else []
         )
     }
-    articles = enrich_articles([article_map[article_id] for article_id in article_ids if article_id in article_map])
+    articles = enrich_articles(
+        [article_map[article_id] for article_id in article_ids if article_id in article_map],
+        user_id,
+    )
 
     return templates.TemplateResponse(
         request,
@@ -170,6 +182,9 @@ def search_page(
 
 @router.get("/articles/{article_id}", response_class=HTMLResponse)
 def article_detail(request: Request, article_id: int, db: Session = Depends(get_db)):
+    user = getattr(getattr(request, 'state', None), 'user', None)
+    user_id = user.id if user else None
+
     article = (
         db.query(Article)
         .options(joinedload(Article.source), joinedload(Article.user_note))
@@ -178,7 +193,7 @@ def article_detail(request: Request, article_id: int, db: Session = Depends(get_
     )
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
-    article = enrich_article(article)
+    article = enrich_article(article, user_id)
     article.breakdown = json.loads(article.score_breakdown or "{}")
     return templates.TemplateResponse(
         request,
@@ -191,7 +206,12 @@ def article_detail(request: Request, article_id: int, db: Session = Depends(get_
 
 
 @router.post("/articles/{article_id}/bookmark", response_class=HTMLResponse)
-def toggle_bookmark(request: Request, article_id: int, db: Session = Depends(get_db)):
+def toggle_bookmark(
+    request: Request,
+    article_id: int,
+    user: User = Depends(require_login),
+    db: Session = Depends(get_db),
+):
     article = (
         db.query(Article)
         .options(joinedload(Article.source), joinedload(Article.user_note))
@@ -200,7 +220,7 @@ def toggle_bookmark(request: Request, article_id: int, db: Session = Depends(get
     )
     if not article:
         return JSONResponse({"error": "not found"}, status_code=404)
-    note = get_or_create_user_note(db, article)
+    note = get_or_create_user_note(db, article, user.id)
     note.is_bookmarked = not note.is_bookmarked
     db.commit()
     is_bm = note.is_bookmarked
@@ -215,8 +235,12 @@ def toggle_bookmark(request: Request, article_id: int, db: Session = Depends(get
 
 
 @router.get("/articles/{article_id}/memo-form", response_class=HTMLResponse)
-def memo_form(article_id: int, db: Session = Depends(get_db)):
-    note = db.query(UserNote).filter_by(article_id=article_id).first()
+def memo_form(
+    article_id: int,
+    user: User = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    note = db.query(UserNote).filter_by(article_id=article_id, user_id=user.id).first()
     current = (note.memo or "") if note else ""
     return HTMLResponse(
         f'<form id="memo-{article_id}" '
@@ -235,8 +259,12 @@ def memo_form(article_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/articles/{article_id}/tags-form", response_class=HTMLResponse)
-def tags_form(article_id: int, db: Session = Depends(get_db)):
-    note = db.query(UserNote).filter_by(article_id=article_id).first()
+def tags_form(
+    article_id: int,
+    user: User = Depends(require_login),
+    db: Session = Depends(get_db),
+):
+    note = db.query(UserNote).filter_by(article_id=article_id, user_id=user.id).first()
     current = ",".join(json.loads(note.user_tags)) if note and note.user_tags else ""
     return HTMLResponse(
         f'<form id="user-tags-{article_id}" '
@@ -256,6 +284,7 @@ def save_memo(
     request: Request,
     article_id: int,
     memo: str = Form(default=""),
+    user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     article = (
@@ -266,7 +295,7 @@ def save_memo(
     )
     if not article:
         return JSONResponse({"error": "not found"}, status_code=404)
-    note = get_or_create_user_note(db, article)
+    note = get_or_create_user_note(db, article, user.id)
     cleaned = memo.strip()
     note.memo = cleaned or None
     db.commit()
@@ -274,7 +303,7 @@ def save_memo(
     return templates.TemplateResponse(
         request,
         "_archive_panel.html",
-        {"request": request, "article": enrich_article(article)},
+        {"request": request, "article": enrich_article(article, user.id)},
     )
 
 
@@ -283,6 +312,7 @@ def save_tags(
     request: Request,
     article_id: int,
     user_tags: str = Form(default=""),
+    user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     article = (
@@ -293,14 +323,14 @@ def save_tags(
     )
     if not article:
         return JSONResponse({"error": "not found"}, status_code=404)
-    note = get_or_create_user_note(db, article)
+    note = get_or_create_user_note(db, article, user.id)
     note.user_tags = json.dumps(parse_user_tags_input(user_tags), ensure_ascii=False)
     db.commit()
     db.refresh(article)
     return templates.TemplateResponse(
         request,
         "_archive_panel.html",
-        {"request": request, "article": enrich_article(article)},
+        {"request": request, "article": enrich_article(article, user.id)},
     )
 
 
@@ -321,6 +351,9 @@ def toggle_read(request: Request, article_id: int, db: Session = Depends(get_db)
 
 @router.post("/articles/{article_id}/translate", response_class=HTMLResponse)
 def translate_article(request: Request, article_id: int, db: Session = Depends(get_db)):
+    user = getattr(getattr(request, 'state', None), 'user', None)
+    user_id = user.id if user else None
+
     article = (
         db.query(Article)
         .options(joinedload(Article.source), joinedload(Article.user_note))
@@ -329,7 +362,7 @@ def translate_article(request: Request, article_id: int, db: Session = Depends(g
     )
     if not article:
         return JSONResponse({"error": "not found"}, status_code=404)
-    article = enrich_article(article)
+    article = enrich_article(article, user_id)
     if article.country == "kr":
         return HTMLResponse("한국어 원문은 번역 대상이 아닙니다.", status_code=400)
 
@@ -362,10 +395,26 @@ def translate_article(request: Request, article_id: int, db: Session = Depends(g
     )
 
 
-@router.post("/api/crawl")
-def manual_crawl(db: Session = Depends(get_db)):
+@router.get("/api/crawl/status")
+def crawl_status():
+    return JSONResponse({"is_crawling": get_crawl_status()})
+
+
+@router.post("/api/crawl", response_class=HTMLResponse)
+def manual_crawl(
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
     runner = CrawlRunner(db)
     result = runner.run()
     if result.get("status") == "already_running":
-        return JSONResponse({"status": "already_running"}, status_code=409)
-    return JSONResponse(result, status_code=200)
+        return HTMLResponse(
+            '<span class="text-amber-400">이미 크롤링이 진행 중입니다.</span>',
+            status_code=409,
+        )
+    crawled = result.get("crawled", 0)
+    failed = result.get("failed", 0)
+    return HTMLResponse(
+        f'<span class="text-emerald-400">{crawled}건 수집</span>'
+        + (f' · <span class="text-red-400">{failed}건 실패</span>' if failed else "")
+    )

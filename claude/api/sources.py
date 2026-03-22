@@ -4,15 +4,20 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from api.helpers import build_sidebar_context
 from api.templates import templates
+from auth.dependencies import require_admin
 from crawler.runner import CrawlRunner
-from db.models import CrawlFailure, Source
+from db.models import CrawlFailure, Source, User
 from db.session import get_db
 
 router = APIRouter()
 
 
 @router.get("/sources", response_class=HTMLResponse)
-def sources_page(request: Request, db: Session = Depends(get_db)):
+def sources_page(
+    request: Request,
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
     sources = db.query(Source).order_by(Source.country, Source.name).all()
     failures = (
         db.query(CrawlFailure)
@@ -22,6 +27,7 @@ def sources_page(request: Request, db: Session = Depends(get_db)):
     failure_map = {}
     for failure in failures:
         failure_map.setdefault(failure.source_id, []).append(failure)
+    user_for_sidebar = getattr(getattr(request, 'state', None), 'user', None)
     return templates.TemplateResponse(
         request,
         "sources.html",
@@ -29,13 +35,17 @@ def sources_page(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "sources": sources,
             "failure_map": failure_map,
-            **build_sidebar_context(db),
+            **build_sidebar_context(db, user_for_sidebar),
         },
     )
 
 
 @router.post("/sources/{source_id}/toggle")
-def toggle_source(source_id: int, db: Session = Depends(get_db)):
+def toggle_source(
+    source_id: int,
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
     source = db.query(Source).filter_by(id=source_id).first()
     if not source:
         return JSONResponse({"error": "not found"}, status_code=404)
@@ -51,7 +61,11 @@ def toggle_source(source_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/sources/{source_id}/retry")
-def retry_source(source_id: int, db: Session = Depends(get_db)):
+def retry_source(
+    source_id: int,
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
     source = db.query(Source).filter_by(id=source_id).first()
     if not source:
         return JSONResponse({"error": "not found"}, status_code=404)
