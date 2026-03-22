@@ -23,6 +23,33 @@ def init_db():
         except Exception:
             pass  # 컬럼이 이미 존재하면 무시
 
+        # user_notes 테이블 마이그레이션: user_id 추가 + UNIQUE(article_id) 제거
+        try:
+            cols = [row[1] for row in conn.execute(text("PRAGMA table_info(user_notes)")).fetchall()]
+            if "user_id" not in cols:
+                conn.execute(text("""
+                    CREATE TABLE user_notes_new (
+                        id INTEGER PRIMARY KEY,
+                        article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+                        user_id INTEGER REFERENCES users(id),
+                        is_bookmarked BOOLEAN NOT NULL DEFAULT 0,
+                        memo TEXT,
+                        user_tags TEXT NOT NULL DEFAULT '[]',
+                        created_at DATETIME,
+                        updated_at DATETIME,
+                        UNIQUE(user_id, article_id)
+                    )
+                """))
+                conn.execute(text("""
+                    INSERT INTO user_notes_new (id, article_id, is_bookmarked, memo, user_tags, created_at, updated_at)
+                    SELECT id, article_id, is_bookmarked, memo, user_tags, created_at, updated_at FROM user_notes
+                """))
+                conn.execute(text("DROP TABLE user_notes"))
+                conn.execute(text("ALTER TABLE user_notes_new RENAME TO user_notes"))
+                conn.commit()
+        except Exception as e:
+            pass  # Column already exists or table doesn't exist yet
+
         # FTS5 가상 테이블 생성 (trigram tokenizer로 한국어 포함 검색 지원)
         conn.execute(text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS article_fts

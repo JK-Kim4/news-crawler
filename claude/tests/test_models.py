@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import pytest
 from sqlalchemy.exc import IntegrityError
-from db.models import Article, Source, CrawlFailure, UserNote
+from db.models import Article, Source, CrawlFailure, UserNote, User
 
 
 def test_source_creation(db):
@@ -79,7 +79,8 @@ def test_user_note_creation(db):
     assert note.created_at is not None
 
 
-def test_user_note_unique_per_article(db):
+def test_user_note_unique_per_user_and_article(db):
+    """Same user cannot have two notes for the same article."""
     source = Source(name="Test Note 2", url="https://note-test2.com/feed", type="rss", weight=5)
     db.add(source)
     db.commit()
@@ -94,10 +95,61 @@ def test_user_note_unique_per_article(db):
     db.add(article)
     db.commit()
 
-    note1 = UserNote(article_id=article.id, is_bookmarked=True)
-    note2 = UserNote(article_id=article.id)
+    user = User(email="uniq@test.com", password_hash="h", nickname="u")
+    db.add(user)
+    db.commit()
+
+    note1 = UserNote(article_id=article.id, user_id=user.id, is_bookmarked=True)
+    note2 = UserNote(article_id=article.id, user_id=user.id)
     db.add(note1)
     db.commit()
     db.add(note2)
     with pytest.raises(IntegrityError):
         db.commit()
+
+
+def test_user_creation(db):
+    user = User(
+        email="test@example.com",
+        password_hash="hashed",
+        nickname="tester",
+        role="user",
+        is_verified=False,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    assert user.id is not None
+    assert user.email == "test@example.com"
+    assert user.role == "user"
+    assert user.is_verified is False
+    assert user.verify_token is None
+    assert user.created_at is not None
+
+
+def test_user_email_unique(db):
+    u1 = User(email="dup@example.com", password_hash="h", nickname="a")
+    u2 = User(email="dup@example.com", password_hash="h", nickname="b")
+    db.add(u1)
+    db.commit()
+    db.add(u2)
+    with pytest.raises(Exception):
+        db.commit()
+    db.rollback()
+
+
+def test_user_note_with_user_id(db):
+    from db.models import Source, Article, UserNote
+    user = User(email="u@test.com", password_hash="h", nickname="u")
+    db.add(user)
+    db.commit()
+    source = Source(name="s", url="http://s.com", type="rss", weight=5)
+    db.add(source)
+    db.commit()
+    article = Article(url="http://a.com", title="a", source_id=source.id)
+    db.add(article)
+    db.commit()
+    note = UserNote(article_id=article.id, user_id=user.id)
+    db.add(note)
+    db.commit()
+    assert note.user_id == user.id

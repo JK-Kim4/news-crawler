@@ -1,10 +1,26 @@
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    nickname = Column(String, nullable=False)
+    role = Column(String, default="user", nullable=False)  # "admin" | "user"
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verify_token = Column(String, nullable=True)
+    verify_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    reset_token = Column(String, nullable=True)
+    reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 class Source(Base):
@@ -51,14 +67,15 @@ class Article(Base):
 
 class UserNote(Base):
     __tablename__ = "user_notes"
+    __table_args__ = (UniqueConstraint("user_id", "article_id", name="uq_user_article"),)
 
     id = Column(Integer, primary_key=True)
     article_id = Column(
         Integer,
         ForeignKey("articles.id", ondelete="CASCADE"),
-        unique=True,
         nullable=False,
     )
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     is_bookmarked = Column(Boolean, default=False, nullable=False)
     memo = Column(Text, nullable=True)
     user_tags = Column(Text, default="[]", nullable=False)  # JSON 배열 문자열
@@ -70,6 +87,7 @@ class UserNote(Base):
     )
 
     article = relationship("Article", back_populates="user_note")
+    user = relationship("User")
 
 
 class CrawlFailure(Base):
