@@ -11,6 +11,7 @@
 
   <!-- 사이드바 -->
   <aside class="w-56 bg-slate-900 text-slate-200 flex flex-col flex-shrink-0">
+    {% set user = request.state.user if request.state is defined else None %}
     <div class="px-4 py-5 border-b border-slate-700">
       <div class="font-bold text-white text-lg">AI Archive</div>
       <div class="text-slate-400 text-xs mt-0.5">AI 기술 아카이브</div>
@@ -21,31 +22,125 @@
       <a href="/" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-700 {% if active_page == 'feed' %}bg-blue-600 text-white{% else %}text-slate-300{% endif %}">
         <span>📰</span> 피드
       </a>
+      {% if user %}
       <a href="/bookmarks" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-700 {% if active_page == 'bookmarks' %}bg-blue-600 text-white{% else %}text-slate-300{% endif %}">
         <span>🔖</span> 북마크
       </a>
+      {% endif %}
       <a href="/search" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-700 {% if active_page == 'search' %}bg-blue-600 text-white{% else %}text-slate-300{% endif %}">
         <span>🔍</span> 검색
       </a>
+      {% if user and user.role == 'admin' %}
       <div class="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500 mt-4">관리</div>
       <a href="/sources" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-700 {% if active_page == 'sources' %}bg-blue-600 text-white{% else %}text-slate-300{% endif %}">
         <span>📡</span> 소스 관리
       </a>
+      {% endif %}
     </nav>
 
+    {% if user and user.role == 'admin' %}
     <div class="px-4 py-4 border-t border-slate-700">
       <div class="text-xs text-slate-500 mb-2" id="crawl-status">크롤링 대기 중</div>
       <button
-        class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded"
+        id="crawl-btn"
+        class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded flex items-center justify-center gap-2 transition-colors"
         hx-post="/api/crawl"
         hx-target="#crawl-result"
-        hx-indicator="#crawl-spinner"
-        hx-disabled-elt="this"
-        hx-on::after-request="document.getElementById('crawl-status').textContent='크롤링 완료'; setTimeout(()=>window.location.reload(),1000)">
+        hx-swap="innerHTML"
+        hx-on::before-request="
+          this.disabled=true;
+          this.classList.replace('bg-blue-600','bg-amber-600');
+          this.classList.replace('hover:bg-blue-700','hover:bg-amber-700');
+          this.innerHTML='<svg class=\'animate-spin h-4 w-4\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\' fill=\'none\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z\'></path></svg> 크롤링 중...';
+          document.getElementById('crawl-status').textContent='크롤링 진행 중...';
+          document.getElementById('crawl-status').classList.replace('text-slate-500','text-amber-400');
+        "
+        hx-on::after-request="
+          var btn=this; var status=document.getElementById('crawl-status');
+          if(event.detail.successful){
+            btn.classList.replace('bg-amber-600','bg-emerald-600');
+            btn.classList.replace('hover:bg-amber-700','hover:bg-emerald-700');
+            btn.innerHTML='✓ 크롤링 완료';
+            status.textContent='크롤링 완료';
+            status.classList.replace('text-amber-400','text-emerald-400');
+          } else {
+            btn.classList.replace('bg-amber-600','bg-red-600');
+            btn.classList.replace('hover:bg-amber-700','hover:bg-red-700');
+            btn.innerHTML='✕ 크롤링 실패';
+            status.textContent='크롤링 실패';
+            status.classList.replace('text-amber-400','text-red-400');
+          }
+          setTimeout(()=>window.location.reload(), 2000);
+        ">
         ⟳ 지금 크롤링
       </button>
-      <span id="crawl-spinner" class="htmx-indicator text-xs text-slate-400 block mt-1">크롤링 중...</span>
-      <div id="crawl-result"></div>
+      <div id="crawl-result" class="text-xs text-slate-400 mt-1"></div>
+    </div>
+
+    <script>
+    (function(){
+      var btn = document.getElementById('crawl-btn');
+      var status = document.getElementById('crawl-status');
+      var pollId = null;
+
+      function showCrawling(){
+        btn.disabled = true;
+        btn.className = 'w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded flex items-center justify-center gap-2 transition-colors';
+        btn.innerHTML = '<svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> 크롤링 중...';
+        status.textContent = '크롤링 진행 중...';
+        status.className = 'text-xs text-amber-400 mb-2';
+      }
+
+      function showDone(){
+        btn.className = 'w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded flex items-center justify-center gap-2 transition-colors';
+        btn.innerHTML = '✓ 크롤링 완료';
+        status.textContent = '크롤링 완료';
+        status.className = 'text-xs text-emerald-400 mb-2';
+        setTimeout(function(){ window.location.reload(); }, 2000);
+      }
+
+      function poll(){
+        fetch('/api/crawl/status')
+          .then(function(r){ return r.json(); })
+          .then(function(data){
+            if(!data.is_crawling){
+              clearInterval(pollId);
+              pollId = null;
+              showDone();
+            }
+          })
+          .catch(function(){});
+      }
+
+      // Check crawl status on page load
+      fetch('/api/crawl/status')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data.is_crawling){
+            showCrawling();
+            pollId = setInterval(poll, 3000);
+          }
+        })
+        .catch(function(){});
+    })();
+    </script>
+    {% endif %}
+
+    <div class="px-4 py-3 border-t border-slate-700">
+      {% if user %}
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-slate-300">{{ user.nickname }}</span>
+        <form method="post" action="/auth/logout">
+          <button type="submit" class="text-xs text-slate-500 hover:text-slate-300">로그아웃</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="flex items-center justify-center gap-3 text-xs">
+        <a href="/auth/login" class="text-blue-400 hover:text-blue-300">로그인</a>
+        <span class="text-slate-600">·</span>
+        <a href="/auth/register" class="text-blue-400 hover:text-blue-300">회원가입</a>
+      </div>
+      {% endif %}
     </div>
   </aside>
 

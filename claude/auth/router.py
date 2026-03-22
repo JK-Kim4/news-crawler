@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from api.templates import templates
 from auth.password import hash_password, verify_password
 from db.models import User
 from db.session import get_db
@@ -56,8 +57,8 @@ def _send_reset_email(email: str, token: str):
 # 1. GET /auth/register — registration form page
 # ──────────────────────────────────────────────
 @router.get("/register", response_class=HTMLResponse)
-def get_register():
-    return HTMLResponse("<h1>회원가입</h1><p>Register form placeholder</p>")
+def get_register(request: Request):
+    return templates.TemplateResponse(request, "auth/register.html", {"request": request})
 
 
 # ──────────────────────────────────────────────
@@ -65,6 +66,7 @@ def get_register():
 # ──────────────────────────────────────────────
 @router.post("/register", response_class=HTMLResponse)
 def post_register(
+    request: Request,
     email: str = Form(...),
     nickname: str = Form(...),
     password: str = Form(...),
@@ -73,25 +75,28 @@ def post_register(
 ):
     # Validate password length
     if len(password) < 8:
-        return HTMLResponse(
-            "<h1>회원가입 오류</h1><p>비밀번호는 최소 8자 이상이어야 합니다.</p>",
-            status_code=200,
+        return templates.TemplateResponse(
+            request,
+            "auth/register.html",
+            {"request": request, "error": "비밀번호는 최소 8자 이상이어야 합니다.", "email": email, "nickname": nickname},
         )
 
     # Validate password match
     if password != password_confirm:
-        return HTMLResponse(
-            "<h1>회원가입 오류</h1><p>비밀번호가 일치하지 않습니다.</p>",
-            status_code=200,
+        return templates.TemplateResponse(
+            request,
+            "auth/register.html",
+            {"request": request, "error": "비밀번호가 일치하지 않습니다.", "email": email, "nickname": nickname},
         )
 
     existing = db.query(User).filter_by(email=email).first()
 
     if existing:
         if existing.is_verified:
-            return HTMLResponse(
-                "<h1>회원가입 오류</h1><p>이미 가입된 이메일입니다.</p>",
-                status_code=200,
+            return templates.TemplateResponse(
+                request,
+                "auth/register.html",
+                {"request": request, "error": "이미 가입된 이메일입니다.", "email": email, "nickname": nickname},
             )
         # Not yet verified: regenerate token and resend
         token = str(uuid.uuid4())
@@ -100,8 +105,10 @@ def post_register(
         existing.password_hash = hash_password(password)
         db.commit()
         _send_verification_email(email, token)
-        return HTMLResponse(
-            "<h1>인증 메일 재발송</h1><p>인증 메일을 다시 보냈습니다. 이메일을 확인해 주세요.</p>"
+        return templates.TemplateResponse(
+            request,
+            "auth/verify_pending.html",
+            {"request": request, "email": email},
         )
 
     # Create new user
@@ -117,8 +124,10 @@ def post_register(
     db.add(user)
     db.commit()
     _send_verification_email(email, token)
-    return HTMLResponse(
-        "<h1>회원가입 완료</h1><p>가입 완료! 이메일을 확인하여 인증을 완료해 주세요.</p>"
+    return templates.TemplateResponse(
+        request,
+        "auth/verify_pending.html",
+        {"request": request, "email": email},
     )
 
 
@@ -157,8 +166,8 @@ def get_verify(token: str, db: Session = Depends(get_db)):
 # 4. GET /auth/login — login form page
 # ──────────────────────────────────────────────
 @router.get("/login", response_class=HTMLResponse)
-def get_login():
-    return HTMLResponse("<h1>로그인</h1><p>Login form placeholder</p>")
+def get_login(request: Request):
+    return templates.TemplateResponse(request, "auth/login.html", {"request": request})
 
 
 # ──────────────────────────────────────────────
@@ -174,15 +183,17 @@ def post_login(
     user = db.query(User).filter_by(email=email).first()
 
     if user is None or not verify_password(password, user.password_hash):
-        return HTMLResponse(
-            "<h1>로그인 오류</h1><p>이메일 또는 비밀번호가 잘못되었습니다.</p>",
-            status_code=200,
+        return templates.TemplateResponse(
+            request,
+            "auth/login.html",
+            {"request": request, "error": "이메일 또는 비밀번호가 잘못되었습니다.", "email": email},
         )
 
     if not user.is_verified:
-        return HTMLResponse(
-            "<h1>로그인 오류</h1><p>이메일 인증이 완료되지 않았습니다. 이메일을 확인해 주세요.</p>",
-            status_code=200,
+        return templates.TemplateResponse(
+            request,
+            "auth/login.html",
+            {"request": request, "error": "이메일 인증이 완료되지 않았습니다. 이메일을 확인해 주세요.", "email": email},
         )
 
     request.session["user_id"] = user.id
@@ -205,14 +216,17 @@ def post_logout(request: Request):
 # ──────────────────────────────────────────────
 @router.post("/resend-verification", response_class=HTMLResponse)
 def post_resend_verification(
+    request: Request,
     email: str = Form(...),
     db: Session = Depends(get_db),
 ):
     user = db.query(User).filter_by(email=email).first()
 
     if user is None or user.is_verified:
-        return HTMLResponse(
-            "<h1>재발송</h1><p>해당 이메일로 인증 메일을 발송했습니다.</p>"
+        return templates.TemplateResponse(
+            request,
+            "auth/verify_pending.html",
+            {"request": request, "email": email},
         )
 
     token = str(uuid.uuid4())
@@ -220,8 +234,10 @@ def post_resend_verification(
     user.verify_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
     db.commit()
     _send_verification_email(email, token)
-    return HTMLResponse(
-        "<h1>재발송 완료</h1><p>인증 메일을 다시 보냈습니다. 이메일을 확인해 주세요.</p>"
+    return templates.TemplateResponse(
+        request,
+        "auth/verify_pending.html",
+        {"request": request, "email": email},
     )
 
 
@@ -229,8 +245,8 @@ def post_resend_verification(
 # 8. GET /auth/forgot-password — password reset form
 # ──────────────────────────────────────────────
 @router.get("/forgot-password", response_class=HTMLResponse)
-def get_forgot_password():
-    return HTMLResponse("<h1>비밀번호 찾기</h1><p>Forgot password form placeholder</p>")
+def get_forgot_password(request: Request):
+    return templates.TemplateResponse(request, "auth/forgot_password.html", {"request": request})
 
 
 # ──────────────────────────────────────────────
@@ -239,6 +255,7 @@ def get_forgot_password():
 # ──────────────────────────────────────────────
 @router.post("/forgot-password", response_class=HTMLResponse)
 def post_forgot_password(
+    request: Request,
     email: str = Form(...),
     db: Session = Depends(get_db),
 ):
@@ -252,8 +269,10 @@ def post_forgot_password(
         _send_reset_email(email, token)
 
     # Always return success to prevent email enumeration
-    return HTMLResponse(
-        "<h1>비밀번호 재설정</h1><p>해당 이메일이 존재한다면 비밀번호 재설정 메일을 발송했습니다.</p>"
+    return templates.TemplateResponse(
+        request,
+        "auth/forgot_password.html",
+        {"request": request, "sent": True},
     )
 
 
@@ -261,7 +280,7 @@ def post_forgot_password(
 # 10. GET /auth/reset-password?token=xxx — new password form
 # ──────────────────────────────────────────────
 @router.get("/reset-password", response_class=HTMLResponse)
-def get_reset_password(token: str, db: Session = Depends(get_db)):
+def get_reset_password(request: Request, token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(reset_token=token).first()
 
     if user is None:
@@ -281,8 +300,10 @@ def get_reset_password(token: str, db: Session = Depends(get_db)):
             status_code=200,
         )
 
-    return HTMLResponse(
-        f"<h1>비밀번호 재설정</h1><p>Reset password form placeholder (token={token})</p>"
+    return templates.TemplateResponse(
+        request,
+        "auth/reset_password.html",
+        {"request": request, "token": token},
     )
 
 
@@ -291,21 +312,24 @@ def get_reset_password(token: str, db: Session = Depends(get_db)):
 # ──────────────────────────────────────────────
 @router.post("/reset-password")
 def post_reset_password(
+    request: Request,
     token: str = Form(...),
     password: str = Form(...),
     password_confirm: str = Form(...),
     db: Session = Depends(get_db),
 ):
     if len(password) < 8:
-        return HTMLResponse(
-            "<h1>오류</h1><p>비밀번호는 최소 8자 이상이어야 합니다.</p>",
-            status_code=200,
+        return templates.TemplateResponse(
+            request,
+            "auth/reset_password.html",
+            {"request": request, "token": token, "error": "비밀번호는 최소 8자 이상이어야 합니다."},
         )
 
     if password != password_confirm:
-        return HTMLResponse(
-            "<h1>오류</h1><p>비밀번호가 일치하지 않습니다.</p>",
-            status_code=200,
+        return templates.TemplateResponse(
+            request,
+            "auth/reset_password.html",
+            {"request": request, "token": token, "error": "비밀번호가 일치하지 않습니다."},
         )
 
     user = db.query(User).filter_by(reset_token=token).first()
