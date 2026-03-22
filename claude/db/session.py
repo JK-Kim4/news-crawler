@@ -50,6 +50,19 @@ def init_db():
         except Exception as e:
             pass  # Column already exists or table doesn't exist yet
 
+        # Assign orphan user_notes to first admin user
+        try:
+            result = conn.execute(text(
+                "UPDATE user_notes SET user_id = ("
+                "  SELECT id FROM users WHERE role = 'admin' ORDER BY id LIMIT 1"
+                ") WHERE user_id IS NULL"
+            ))
+            if result.rowcount > 0:
+                conn.commit()
+                logger.info("Migrated %d orphan user_notes to admin user", result.rowcount)
+        except Exception as e:
+            logger.warning("user_notes migration skipped: %s", e)
+
         # FTS5 가상 테이블 생성 (trigram tokenizer로 한국어 포함 검색 지원)
         conn.execute(text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS article_fts
