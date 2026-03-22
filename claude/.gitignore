@@ -4,3 +4,5 @@ __pycache__/
 .eggs/
 *.db
 .env
+.superpowers/
+.venv/
