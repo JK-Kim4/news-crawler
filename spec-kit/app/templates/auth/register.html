@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% set active_page = 'register' %}
+{% block content %}
+<div class="flex-1 flex items-center justify-center">
+  <div class="bg-white rounded-xl border border-slate-200 p-8 w-full max-w-md">
+    <h1 class="text-xl font-bold text-slate-800 mb-6">회원가입</h1>
+    {% if error %}
+    <div class="bg-red-50 text-red-600 text-sm px-4 py-2 rounded mb-4">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/auth/register" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">이메일</label>
+        <input name="email" type="email" required value="{{ email|default('') }}"
+               class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">닉네임</label>
+        <input name="nickname" type="text" required value="{{ nickname|default('') }}"
+               class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">비밀번호 (8자 이상)</label>
+        <input name="password" type="password" required minlength="8"
+               class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">비밀번호 확인</label>
+        <input name="password_confirm" type="password" required minlength="8"
+               class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
+      </div>
+      <button type="submit" class="w-full py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">가입하기</button>
+    </form>
+    <p class="text-sm text-slate-500 mt-4 text-center">
+      이미 계정이 있으신가요? <a href="/auth/login" class="text-blue-600 hover:text-blue-700">로그인</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

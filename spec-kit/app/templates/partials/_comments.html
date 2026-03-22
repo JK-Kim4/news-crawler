@@ -1,0 +1,42 @@
+<div id="comments-{{ article_id }}">
+  <div class="space-y-3 mb-4">
+    {% for comment in comments %}
+    <div class="border border-slate-200 rounded-lg p-3">
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-slate-700">{{ comment.user.nickname }}</span>
+          <span class="text-xs text-slate-400">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') if comment.created_at }}</span>
+          {% if comment.is_edited %}<span class="text-xs text-slate-400">(수정됨)</span>{% endif %}
+        </div>
+        <div class="flex items-center gap-1">
+          {% if user and comment.user_id == user.id %}
+          <button class="text-xs text-blue-500 hover:text-blue-700" onclick="this.closest('.border').querySelector('.edit-form').classList.toggle('hidden');this.closest('.border').querySelector('.comment-text').classList.toggle('hidden')">수정</button>
+          {% endif %}
+          {% if user and (comment.user_id == user.id or user.role == 'admin') %}
+          <form hx-post="/comments/{{ comment.id }}/delete" hx-target="#comments-{{ article_id }}" hx-swap="outerHTML" onsubmit="return confirm('삭제하시겠습니까?')">
+            <button type="submit" class="text-xs text-red-500 hover:text-red-700">삭제</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      <p class="text-sm text-slate-600 whitespace-pre-line comment-text">{{ comment.content }}</p>
+      <form class="edit-form hidden mt-2" hx-post="/comments/{{ comment.id }}/edit" hx-target="#comments-{{ article_id }}" hx-swap="outerHTML">
+        <textarea name="content" rows="2" class="w-full border border-slate-200 rounded px-2 py-1 text-sm">{{ comment.content }}</textarea>
+        <div class="flex gap-2 mt-1">
+          <button type="submit" class="text-xs px-2 py-1 bg-blue-600 text-white rounded">저장</button>
+          <button type="button" class="text-xs px-2 py-1 border rounded text-slate-500" onclick="this.closest('.edit-form').classList.add('hidden');this.closest('.border').querySelector('.comment-text').classList.remove('hidden')">취소</button>
+        </div>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% if not comments %}<p class="text-sm text-slate-400 mb-4">아직 댓글이 없습니다.</p>{% endif %}
+  {% if user %}
+  <form hx-post="/articles/{{ article_id }}/comments" hx-target="#comments-{{ article_id }}" hx-swap="outerHTML" class="flex gap-2">
+    <input name="content" placeholder="댓글을 입력하세요..." required maxlength="1000" class="flex-1 border border-slate-200 rounded px-3 py-2 text-sm">
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">등록</button>
+  </form>
+  {% else %}
+  <p class="text-sm text-slate-400"><a href="/auth/login" class="text-blue-500">로그인</a>하면 댓글을 작성할 수 있습니다.</p>
+  {% endif %}
+</div>

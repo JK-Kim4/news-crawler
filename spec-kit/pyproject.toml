@@ -1,0 +1,25 @@
+[project]
+name = "ai-news-crawler"
+version = "0.1.0"
+description = "AI News Crawler - 중요도 기반 AI 뉴스 수집기"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0",
+    "jinja2>=3.1",
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "apscheduler>=3.10",
+    "passlib[bcrypt]>=1.7",
+    "python-dotenv>=1.0",
+    "python-multipart>=0.0.9",
+    "starlette-csrf>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
