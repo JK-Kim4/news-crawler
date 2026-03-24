@@ -1,7 +1,0 @@
-<button
-  class="inline-flex items-center rounded-2xl {% if article.is_read %}bg-slate-200 text-slate-700{% else %}bg-emerald-500 text-white{% endif %} px-4 py-3 text-sm font-semibold"
-  hx-post="/articles/{{ article.id }}/read"
-  hx-target="#read-button-{{ article.id }}"
-  hx-swap="outerHTML">
-  {{ "읽음 취소" if article.is_read else "읽음" }}
-</button>
