@@ -1,0 +1,64 @@
+{
+  "sources": [
+    {
+      "name": "Naver D2",
+      "base_url": "https://d2.naver.com/helloworld",
+      "rss_url": "https://d2.naver.com/d2.atom",
+      "selector_title": "h2",
+      "selector_content": ".post_txt",
+      "language": "ko",
+      "source_type": "BLOG",
+      "is_active": true
+    },
+    {
+      "name": "Kakao Tech",
+      "base_url": "https://tech.kakao.com/blog",
+      "rss_url": null,
+      "selector_title": "h2.title",
+      "selector_content": ".post-content",
+      "language": "ko",
+      "source_type": "BLOG",
+      "is_active": true
+    },
+    {
+      "name": "Toss Tech",
+      "base_url": "https://toss.tech",
+      "rss_url": null,
+      "selector_title": "h1",
+      "selector_content": "article",
+      "language": "ko",
+      "source_type": "BLOG",
+      "is_active": true
+    },
+    {
+      "name": "Line Engineering",
+      "base_url": "https://engineering.linecorp.com/ko/blog",
+      "rss_url": null,
+      "selector_title": "h1.title",
+      "selector_content": ".post-content",
+      "language": "ko",
+      "source_type": "BLOG",
+      "is_active": true
+    },
+    {
+      "name": "arXiv AI",
+      "base_url": "https://arxiv.org/list/cs.AI/recent",
+      "rss_url": "https://rss.arxiv.org/rss/cs.AI",
+      "selector_title": "h1.title",
+      "selector_content": "blockquote.abstract",
+      "language": "en",
+      "source_type": "PAPER",
+      "is_active": true
+    },
+    {
+      "name": "TechCrunch AI",
+      "base_url": "https://techcrunch.com/category/artificial-intelligence/",
+      "rss_url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "selector_title": "h1",
+      "selector_content": ".article-content",
+      "language": "en",
+      "source_type": "NEWS",
+      "is_active": true
+    }
+  ]
+}
