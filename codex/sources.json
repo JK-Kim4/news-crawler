@@ -1,0 +1,36 @@
+[
+  {
+    "key": "naver-d2",
+    "name": "Naver D2",
+    "base_url": "https://d2.naver.com",
+    "rss_url": "https://d2.naver.com/d2.atom",
+    "selector_title": "h2",
+    "selector_content": ".post_article",
+    "language": "ko",
+    "source_type": "BLOG",
+    "is_active": true
+  },
+  {
+    "key": "kakao-tech",
+    "name": "Kakao Tech",
+    "base_url": "https://tech.kakao.com",
+    "rss_url": "https://tech.kakao.com/feed/",
+    "selector_title": "h1",
+    "selector_content": ".entry-content",
+    "language": "ko",
+    "source_type": "BLOG",
+    "is_active": true
+  },
+  {
+    "key": "arxiv-ai",
+    "name": "arXiv AI",
+    "base_url": "https://arxiv.org",
+    "rss_url": "http://export.arxiv.org/rss/cs.AI",
+    "selector_title": "h1.title",
+    "selector_content": "blockquote.abstract",
+    "language": "en",
+    "source_type": "PAPER",
+    "is_active": true
+  }
+]
+
